@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forgeplex SSO SPA PKCE 示例</title>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Forgeplex SSO</p>
+      <h1>SPA + Authorization Code + PKCE</h1>
+      <p class="hint">公开客户端不配置 client_secret。Token 只保存在当前浏览器会话。</p>
+      <div class="actions">
+        <button id="login">登录</button>
+        <button id="logout" class="secondary">退出</button>
+        <button id="call-api" class="secondary">调用 API</button>
+      </div>
+      <h2>当前状态</h2>
+      <pre id="output">正在初始化……</pre>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

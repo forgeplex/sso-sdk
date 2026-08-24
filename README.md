@@ -109,3 +109,13 @@ ManagementURL: "http://localhost:8082",
 - 身份域：列表、详情、创建、更新、删除
 
 尚未类型化的新接口可以通过 `Client.Do` 调用。它仍会复用相同的令牌缓存、错误模型和 Realm 上下文。
+
+## 可运行示例
+
+[`examples/`](examples/) 按接入形态提供完整示例：
+
+- [`web-backend`](examples/web-backend/)：Go 后端托管登录和 Session，推荐用于带后端的 Web 系统。
+- [`spa-pkce`](examples/spa-pkce/)：浏览器 SPA 作为公开客户端，使用 Authorization Code + PKCE。
+- [`machine-to-machine`](examples/machine-to-machine/)：定时任务或内部服务通过 `client_credentials` 调用 Management API。
+
+三种方案的客户端类型和安全边界不同，不应复用同一个 `client_id` 或把机密客户端的 `client_secret` 放进浏览器。

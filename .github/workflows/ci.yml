@@ -19,3 +19,12 @@ jobs:
           cache: true
       - run: go vet ./...
       - run: go test -race ./...
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: examples/spa-pkce/package-lock.json
+      - run: npm ci
+        working-directory: examples/spa-pkce
+      - run: npm run build
+        working-directory: examples/spa-pkce

@@ -1,0 +1,16 @@
+{
+  "name": "forgeplex-sso-spa-pkce-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4173",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "oidc-client-ts": "3.5.0"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.2.2"
+  }
+}

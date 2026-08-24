@@ -1,2 +1,5 @@
 coverage.out
 *.test
+node_modules/
+dist/
+.env.local
