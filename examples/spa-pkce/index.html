@@ -10,6 +10,14 @@
       <p class="eyebrow">Forgeplex SSO</p>
       <h1>SPA + Authorization Code + PKCE</h1>
       <p class="hint">公开客户端不配置 client_secret。Token 只保存在当前浏览器会话。</p>
+      <section class="configuration">
+        <h2>连接配置</h2>
+        <label>Issuer <input id="issuer" placeholder="http://point-market.localhost:8081/" /></label>
+        <label>Client ID <input id="client-id" placeholder="SPA 应用的 client_id" /></label>
+        <label>API Audience（可选）<input id="audience" placeholder="https://api.example.com/" /></label>
+        <label>API URL（可选）<input id="api-url" placeholder="https://api.example.com/me" /></label>
+        <button id="save-config" class="secondary">保存配置</button>
+      </section>
       <div class="actions">
         <button id="login">登录</button>
         <button id="logout" class="secondary">退出</button>
@@ -18,6 +26,13 @@
       <h2>当前状态</h2>
       <pre id="output">正在初始化……</pre>
     </main>
+    <script>
+      if (window.location.protocol === "file:") {
+        document.querySelector("#output").textContent =
+          "此示例不能通过 file:// 直接运行。请在当前目录执行 npm install && npm run dev，然后访问 http://localhost:4173。";
+        document.querySelectorAll("button").forEach((button) => button.disabled = true);
+      }
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -31,6 +31,36 @@ h1 {
   color: #697386;
 }
 
+.configuration {
+  display: grid;
+  gap: 14px;
+  margin: 28px 0;
+  padding: 20px;
+  border: 1px solid #e1e4ed;
+  border-radius: 14px;
+  background: #fafafe;
+}
+
+.configuration h2 {
+  margin: 0;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #4f5869;
+  font-size: 14px;
+}
+
+input {
+  padding: 10px 12px;
+  border: 1px solid #d8d9e5;
+  border-radius: 8px;
+  color: #18202d;
+  background: white;
+  font: inherit;
+}
+
 .actions {
   display: flex;
   gap: 12px;
@@ -50,6 +80,11 @@ button.secondary {
   color: #35315e;
   background: white;
   border-color: #d8d9e5;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 pre {
