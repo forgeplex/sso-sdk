@@ -131,3 +131,80 @@ func TestOIDCAuthorizationCodePKCEFlow(t *testing.T) {
 		t.Fatalf("logout URL = %s", logout)
 	}
 }
+
+// forgeplex issuers end with "/" and go-oidc compares issuers byte-for-byte, so
+// the configured value must reach Discovery and ID token checks unchanged.
+func TestOIDCIssuerWithTrailingSlash(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signer, err := jose.NewSigner(
+		jose.SigningKey{Algorithm: jose.RS256, Key: key},
+		(&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", "test-key"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var expectedNonce, tokenIssuer string
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/.well-known/openid-configuration":
+			writeJSON(t, w, map[string]any{
+				"issuer":                                server.URL + "/",
+				"authorization_endpoint":                server.URL + "/authorize",
+				"token_endpoint":                        server.URL + "/oauth/token",
+				"jwks_uri":                              server.URL + "/.well-known/jwks.json",
+				"response_types_supported":              []string{"code"},
+				"subject_types_supported":               []string{"public"},
+				"id_token_signing_alg_values_supported": []string{"RS256"},
+			})
+		case "/.well-known/jwks.json":
+			writeJSON(t, w, jose.JSONWebKeySet{Keys: []jose.JSONWebKey{{Key: &key.PublicKey, KeyID: "test-key", Algorithm: "RS256", Use: "sig"}}})
+		case "/oauth/token":
+			now := time.Now()
+			raw, signErr := jwt.Signed(signer).Claims(jwt.Claims{
+				Issuer: tokenIssuer, Subject: "user-123", Audience: jwt.Audience{"web-app"},
+				IssuedAt: jwt.NewNumericDate(now), Expiry: jwt.NewNumericDate(now.Add(time.Hour)),
+			}).Claims(map[string]any{"nonce": expectedNonce}).Serialize()
+			if signErr != nil {
+				t.Errorf("sign id token: %v", signErr)
+			}
+			writeJSON(t, w, map[string]any{"access_token": "access-token", "token_type": "Bearer", "expires_in": 3600, "id_token": raw})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	issuer := server.URL + "/"
+	client, err := sso.NewOIDC(context.Background(), sso.OIDCConfig{
+		IssuerURL: issuer, ClientID: "web-app", ClientSecret: "secret",
+		RedirectURL: "https://app.example.com/callback",
+	})
+	if err != nil {
+		t.Fatalf("NewOIDC with trailing-slash issuer: %v", err)
+	}
+	request, err := client.BeginLogin(sso.AuthorizationOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedNonce = request.Nonce
+
+	tokenIssuer = issuer
+	session, err := client.Exchange(context.Background(), "code", request.State, request)
+	if err != nil {
+		t.Fatalf("Exchange with iss %q: %v", tokenIssuer, err)
+	}
+	if session.Claims["iss"] != issuer {
+		t.Fatalf("iss = %v, want %q", session.Claims["iss"], issuer)
+	}
+
+	tokenIssuer = server.URL
+	if _, err = client.Exchange(context.Background(), "code", request.State, request); err == nil {
+		t.Fatalf("ID token with iss %q accepted for issuer %q", tokenIssuer, issuer)
+	}
+}

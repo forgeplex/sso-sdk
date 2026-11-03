@@ -69,17 +69,19 @@ type Session struct {
 
 // NewOIDC discovers the Realm endpoints and constructs a login client.
 func NewOIDC(ctx context.Context, cfg OIDCConfig) (*OIDCClient, error) {
-	issuer, err := parseBaseURL("IssuerURL", cfg.IssuerURL)
-	if err != nil {
+	if _, err := parseBaseURL("IssuerURL", cfg.IssuerURL); err != nil {
 		return nil, err
 	}
+	// parseBaseURL normalizes away the trailing slash; go-oidc needs the exact
+	// configured issuer.
+	issuer := strings.TrimSpace(cfg.IssuerURL)
 	if strings.TrimSpace(cfg.ClientID) == "" {
 		return nil, errors.New("sso: ClientID 不能为空")
 	}
 	if strings.TrimSpace(cfg.RedirectURL) == "" {
 		return nil, errors.New("sso: RedirectURL 不能为空")
 	}
-	if _, err = parseBaseURL("RedirectURL", cfg.RedirectURL); err != nil {
+	if _, err := parseBaseURL("RedirectURL", cfg.RedirectURL); err != nil {
 		return nil, err
 	}
 	httpClient := cfg.HTTPClient
@@ -87,7 +89,10 @@ func NewOIDC(ctx context.Context, cfg OIDCConfig) (*OIDCClient, error) {
 		httpClient = http.DefaultClient
 	}
 	discoveryCtx := oidc.ClientContext(ctx, httpClient)
-	provider, err := oidc.NewProvider(discoveryCtx, strings.TrimRight(issuer.String(), "/"))
+	// go-oidc compares the issuer byte-for-byte with Discovery's issuer and the
+	// ID token iss claim (forgeplex issuers end with "/"); it trims the slash
+	// itself when building the well-known URL.
+	provider, err := oidc.NewProvider(discoveryCtx, issuer)
 	if err != nil {
 		return nil, fmt.Errorf("sso: 读取 OIDC Discovery: %w", err)
 	}
